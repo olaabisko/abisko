@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Abisko – Temperatur</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    :root {
+      --cold: #4facfe;
+      --warm: #f093fb;
+      --bg-dark: #0f172a;
+      --card: rgba(255,255,255,0.08);
+      --text: #e5e7eb;
+    }
+
+    body {
+      margin: 0;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+      background: radial-gradient(circle at top, #1e293b, var(--bg-dark));
+      color: var(--text);
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .container {
+      max-width: 900px;
+      width: 100%;
+      padding: 24px;
+    }
+
+    .card {
+      background: var(--card);
+      backdrop-filter: blur(10px);
+      border-radius: 20px;
+      padding: 24px;
+      box-shadow: 0 20px 40px rgba(0,0,0,0.4);
+    }
+
+    h1 {
+      margin: 0 0 8px 0;
+      font-size: 2rem;
+    }
+
+    .subtitle {
+      opacity: 0.8;
+      margin-bottom: 24px;
+    }
+
+    .current-temp {
+      font-size: 4rem;
+      font-weight: 700;
+      margin: 16px 0;
+    }
+
+    canvas {
+      margin-top: 24px;
+    }
+
+    footer {
+      margin-top: 16px;
+      font-size: 0.8rem;
+      opacity: 0.6;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="card">
+      <h1>🌌 Abisko</h1>
+      <div class="subtitle">Lokal lufttemperatur – senaste 24 timmarna</div>
+
+      <div id="currentTemp" class="current-temp">–</div>
+
+      <canvas id="tempChart" height="120"></canvas>
+
+      <footer>
+        Data från SMHI, station Abisko
+      </footer>
+    </div>
+  </div>
+
+  <script>
+    const stationId = 188790;
+    const parameter = 1; // Lufttemperatur
+
+    const url = `https://opendata-download-metobs.smhi.se/api/version/1.0/parameter/${parameter}/station/${stationId}/period/latest-day/data.json`;
+
+    fetch(url)
+      .then(res => res.json())
+      .then(data => {
+        const values = data.value;
+
+        const labels = values.map(v => new Date(v.date).toLocaleTimeString('sv-SE', { hour: '2-digit', minute: '2-digit' }));
+        const temps = values.map(v => v.value);
+
+        const latest = temps[temps.length - 1];
+        document.getElementById('currentTemp').textContent = `${latest.toFixed(1)} °C`;
+
+        const ctx = document.getElementById('tempChart').getContext('2d');
+        new Chart(ctx, {
+          type: 'line',
+          data: {
+            labels,
+            datasets: [{
+              label: 'Temperatur (°C)',
+              data: temps,
+              borderWidth: 3,
+              tension: 0.4,
+              fill: true,
+              backgroundColor: 'rgba(79,172,254,0.2)',
+              borderColor: '#4facfe',
+              pointRadius: 0
+            }]
+          },
+          options: {
+            plugins: {
+              legend: { display: false }
+            },
+            scales: {
+              x: {
+                ticks: { color: '#cbd5f5' },
+                grid: { display: false }
+              },
+              y: {
+                ticks: { color: '#cbd5f5' },
+                grid: { color: 'rgba(255,255,255,0.05)' }
+              }
+            }
+          }
+        });
+      })
+      .catch(err => {
+        document.getElementById('currentTemp').textContent = 'Kunde inte ladda data';
+        console.error(err);
+      });
+  </script>
+</body>
+</html>
